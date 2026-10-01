@@ -16,6 +16,8 @@ An n8n automation that answers customer messages on WhatsApp — text, voice not
 
 If the message type isn't supported (e.g. a sticker or document), the customer gets a polite "please resend as text, voice, photo or video" message instead of the workflow breaking.
 
+<img width="1184" height="684" alt="image" src="https://github.com/user-attachments/assets/883c1f60-1bf2-42f2-99a4-2d9ec3f9ce3f" />
+
 ---
 
 ## Two parts of this workflow
