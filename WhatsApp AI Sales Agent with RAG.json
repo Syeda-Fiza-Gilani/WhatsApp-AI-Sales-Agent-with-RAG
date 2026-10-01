@@ -1,0 +1,1049 @@
+{
+  "name": "WhatsApp AI Sales Agent with RAG",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "efd68efd-efd9-49a5-9903-eed7f798cd8c",
+      "name": "Populate Product Catalogue",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        1280,
+        12704
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "kb-1",
+              "name": "product_brochure_url",
+              "type": "string",
+              "value": "<__PLACEHOLDER_VALUE__Direct URL to your product brochure/catalogue PDF (e.g. https://yoursite.com/catalogue.pdf)__>"
+            },
+            {
+              "id": "kb-2",
+              "name": "chunk_size",
+              "type": "number",
+              "value": 2000
+            },
+            {
+              "id": "kb-3",
+              "name": "chunk_overlap",
+              "type": "number",
+              "value": 200
+            },
+            {
+              "id": "kb-4",
+              "name": "vector_store_key",
+              "type": "string",
+              "value": "product_catalogue"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "69b00f55-f699-49a7-8f4f-4adb99a5e1d1",
+      "name": "Knowledge Base Settings",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1456,
+        12704
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Knowledge Base Settings').item.json.product_brochure_url }}",
+        "options": {}
+      },
+      "id": "d05b13a6-bf69-401b-94b9-aedf48831d38",
+      "name": "Download Product Brochure",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1648,
+        12704
+      ],
+      "typeVersion": 4.4
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {
+          "joinPages": true
+        }
+      },
+      "id": "9aa28680-ce8b-489a-9a0f-0bbcc3effcce",
+      "name": "Extract Brochure Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        1856,
+        12704
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "product_catalogue",
+          "cachedResultName": "product_catalogue"
+        },
+        "clearStore": true
+      },
+      "id": "9f17180d-e397-42d3-9920-7b28372326fd",
+      "name": "Insert Product Catalogue into Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "position": [
+        2048,
+        12704
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "8c071ae9-8040-4415-9c2a-586adfd4b046",
+      "name": "Embeddings for Indexing",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        1728,
+        12976
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $('Extract Brochure Text').item.json.text }}",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "id": "2ecd6edf-ec71-4414-9b65-73a93610adae",
+      "name": "Load Brochure Document",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "position": [
+        2112,
+        12960
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "chunkSize": "={{ $('Knowledge Base Settings').item.json.chunk_size }}",
+        "chunkOverlap": "={{ $('Knowledge Base Settings').item.json.chunk_overlap }}",
+        "options": {}
+      },
+      "id": "145a3d05-0fd7-4314-a3ee-96c0410b56af",
+      "name": "Split Brochure Text",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "position": [
+        2048,
+        13152
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "id": "d637ac8e-0fe7-4010-a816-5c1933f85603",
+      "name": "WhatsApp Trigger",
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "position": [
+        1728,
+        13536
+      ],
+      "webhookId": "e19d0c6f-b8fc-4097-9eae-c3ade95d1465",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-1",
+              "name": "openai_model",
+              "type": "string",
+              "value": "gpt-5.4-mini"
+            },
+            {
+              "id": "cfg-2",
+              "name": "vision_model",
+              "type": "string",
+              "value": "gpt-5.4-mini"
+            },
+            {
+              "id": "cfg-3",
+              "name": "video_model",
+              "type": "string",
+              "value": "models/gemini-3.5-flash"
+            },
+            {
+              "id": "cfg-4",
+              "name": "memory_context_window",
+              "type": "number",
+              "value": 10
+            },
+            {
+              "id": "cfg-5",
+              "name": "max_reply_length",
+              "type": "number",
+              "value": 1500
+            },
+            {
+              "id": "cfg-6",
+              "name": "vector_store_key",
+              "type": "string",
+              "value": "product_catalogue"
+            },
+            {
+              "id": "cfg-7",
+              "name": "phone_number_id",
+              "type": "string",
+              "value": "<__PLACEHOLDER_VALUE__Your WhatsApp Business phone number ID (from Meta app dashboard)__>"
+            },
+            {
+              "id": "cfg-8",
+              "name": "system_prompt",
+              "type": "string",
+              "value": "You are a helpful WhatsApp Sales Agent for our company. You help customers navigate our product catalogue for the current year. Your goal is not to force a sale but to answer questions factually using the query_product_catalogue tool. If a customer sends a photo, video, or voice note, its content has already been converted to text for you below - treat it exactly like a normal message. If you do not know the answer or the catalogue tool has no information, say so honestly and direct the customer to a human agent. Keep replies concise and friendly, suitable for WhatsApp."
+            },
+            {
+              "id": "cfg-9",
+              "name": "product_catalogue_description",
+              "type": "string",
+              "value": "Useful for answering questions about our product catalogue: features, prices, colors, sizes and availability. Always use this before answering a product question. Input should be a fully formed question."
+            },
+            {
+              "id": "cfg-10",
+              "name": "unsupported_message_text",
+              "type": "string",
+              "value": "Sorry, I can only understand text, voice notes, photos and videos for now. Could you resend your message in one of these formats?"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "6cc7254e-eac7-4235-b04b-826b78432a1c",
+      "name": "Configuration",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1968,
+        13536
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.messages[0].type }}",
+                    "rightValue": "audio"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.messages[0].type }}",
+                    "rightValue": "image"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.messages[0].type }}",
+                    "rightValue": "video"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Video"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $json.messages[0].type }}",
+                    "rightValue": "text"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Unsupported"
+        }
+      },
+      "id": "47af7f89-3926-46fd-acdc-bbbf24bf53c3",
+      "name": "Route by Message Type",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        2176,
+        13488
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $('WhatsApp Trigger').item.json.messages[0].audio.id }}"
+      },
+      "id": "325165af-c0a9-426e-a011-4f69bacbf544",
+      "name": "Get Audio Media URL",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        2560,
+        13200
+      ],
+      "webhookId": "3ad60ba5-eeb6-4290-a78f-498c93f7a113",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "ebd7310c-dc25-4d77-86ce-c47264ff4f02",
+      "name": "Download Audio File",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        2832,
+        13136
+      ],
+      "typeVersion": 4.4
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "id": "e4b52a94-3b9a-4803-9714-cf8fba3c3066",
+      "name": "Transcribe Voice Note",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        3136,
+        13120
+      ],
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "in-1",
+              "name": "message_type",
+              "type": "string",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].type }}"
+            },
+            {
+              "id": "in-2",
+              "name": "message_text",
+              "type": "string",
+              "value": "={{ $json.text ?? $json.content ?? $('WhatsApp Trigger').item.json.messages[0].text?.body ?? '' }}"
+            },
+            {
+              "id": "in-3",
+              "name": "message_caption",
+              "type": "string",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].image?.caption ?? $('WhatsApp Trigger').item.json.messages[0].video?.caption ?? '' }}"
+            },
+            {
+              "id": "in-4",
+              "name": "from",
+              "type": "string",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "22a3658d-a075-4599-a5f0-09e89dbf28ad",
+      "name": "Prepare Agent Input",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        3296,
+        13392
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $('WhatsApp Trigger').item.json.messages[0].image.id }}"
+      },
+      "id": "0aee7a7b-60e0-4f34-b805-eaf3e2be778c",
+      "name": "Get Image Media URL",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        2496,
+        13456
+      ],
+      "webhookId": "2b8629da-958a-4fc4-a797-8a1c1fb25cb2",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "f55098fb-8022-41df-a545-a5194261efa7",
+      "name": "Download Image File",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        2800,
+        13584
+      ],
+      "typeVersion": 4.4
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Configuration').item.json.vision_model }}"
+        },
+        "text": "Describe this image in detail for a sales assistant: product type, color, visible defects, and any text or model number visible. Keep it factual.",
+        "inputType": "base64",
+        "options": {},
+        "images": {
+          "values": [
+            {}
+          ]
+        }
+      },
+      "id": "73250c0e-8183-4985-9e0d-486c94fca91c",
+      "name": "Analyze Image with GPT Vision",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        3040,
+        13584
+      ],
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $('WhatsApp Trigger').item.json.messages[0].video.id }}"
+      },
+      "id": "0fd32098-1e2b-4a0c-8af8-6db48699b415",
+      "name": "Get Video Media URL",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        2480,
+        13712
+      ],
+      "webhookId": "fc7ae27f-48a7-47e4-bd21-3f363354703a",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "587daf4e-0b42-4093-957b-679f9596350f",
+      "name": "Download Video File",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        2816,
+        13920
+      ],
+      "typeVersion": 4.4
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Configuration').item.json.video_model }}"
+        },
+        "text": "Describe what happens in this video for a sales assistant: the product shown, how it is used, and any visible defect. Keep it factual and concise.",
+        "inputType": "binary",
+        "options": {}
+      },
+      "id": "81cb9ed5-d447-40dd-911b-48add45ea6fe",
+      "name": "Describe Video with Gemini",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "position": [
+        3120,
+        13904
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "={{ $('Configuration').item.json.phone_number_id }}",
+        "recipientPhoneNumber": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+        "textBody": "={{ $('Configuration').item.json.unsupported_message_text }}",
+        "additionalFields": {
+          "previewUrl": false
+        }
+      },
+      "id": "29b1fbe3-ebef-40cc-9296-bb57bc183618",
+      "name": "Reply Unsupported Message",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        2432,
+        13984
+      ],
+      "webhookId": "aa0ff2a1-1f57-4185-a4e6-df799d5b8813",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Message type: {{ $json.message_type }}\nCustomer message: {{ $json.message_text }}\nMedia caption (if any): {{ $json.message_caption }}",
+        "options": {
+          "systemMessage": "={{ $('Configuration').item.json.system_prompt }}",
+          "passthroughBinaryImages": false
+        }
+      },
+      "id": "c842378d-0092-43a3-882a-6a63e10cd401",
+      "name": "AI Sales Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        3520,
+        13344
+      ],
+      "typeVersion": 3.1
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Configuration').item.json.openai_model }}"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "802a714a-1ec3-4e0a-a073-cb522f3dc88a",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        3504,
+        13568
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+        "contextWindowLength": "={{ $('Configuration').item.json.memory_context_window }}"
+      },
+      "id": "ea3b4dbd-e2bf-42b2-90dd-7c2305893988",
+      "name": "Per-Customer Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "position": [
+        3664,
+        13632
+      ],
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "description": "={{ $('Configuration').item.json.product_catalogue_description }}"
+      },
+      "id": "d064b496-0482-4fb5-9f51-5738a62246b7",
+      "name": "query_product_catalogue",
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "position": [
+        4000,
+        13328
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "product_catalogue",
+          "cachedResultName": "product_catalogue"
+        }
+      },
+      "id": "7bf1f4cc-746d-4633-8350-0b66f021c27d",
+      "name": "Product Catalogue (Retrieve)",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "position": [
+        3840,
+        13536
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e7a0a4e6-b8e1-472f-9db5-cee6bc0736c5",
+      "name": "Embeddings for Retrieval",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        3840,
+        13680
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "={{ $('Configuration').item.json.phone_number_id }}",
+        "recipientPhoneNumber": "={{ $('Prepare Agent Input').item.json.from }}",
+        "textBody": "={{ $json.output.slice(0, $('Configuration').item.json.max_reply_length) }}",
+        "additionalFields": {
+          "previewUrl": false
+        }
+      },
+      "id": "31d919f3-0089-44d7-8676-a1dbe2eebc48",
+      "name": "Reply to Customer",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        3760,
+        13104
+      ],
+      "webhookId": "86293977-cb0f-4fdb-b6ad-8fb666498b5e",
+      "typeVersion": 1.1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Configuration": {
+      "main": [
+        [
+          {
+            "node": "Route by Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Sales Agent": {
+      "main": [
+        [
+          {
+            "node": "Reply to Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Sales Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "query_product_catalogue",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Audio File": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Voice Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image File": {
+      "main": [
+        [
+          {
+            "node": "Analyze Image with GPT Vision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Video File": {
+      "main": [
+        [
+          {
+            "node": "Describe Video with Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Audio Media URL": {
+      "main": [
+        [
+          {
+            "node": "Download Audio File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Image Media URL": {
+      "main": [
+        [
+          {
+            "node": "Download Image File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Video Media URL": {
+      "main": [
+        [
+          {
+            "node": "Download Video File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Agent Input": {
+      "main": [
+        [
+          {
+            "node": "AI Sales Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Brochure Text": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Load Brochure Document",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Brochure Text": {
+      "main": [
+        [
+          {
+            "node": "Insert Product Catalogue into Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Message Type": {
+      "main": [
+        [
+          {
+            "node": "Get Audio Media URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Image Media URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Video Media URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Agent Input",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply Unsupported Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Voice Note": {
+      "main": [
+        [
+          {
+            "node": "Prepare Agent Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Brochure Document": {
+      "ai_document": [
+        [
+          {
+            "node": "Insert Product Catalogue into Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings for Indexing": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insert Product Catalogue into Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Knowledge Base Settings": {
+      "main": [
+        [
+          {
+            "node": "Download Product Brochure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "query_product_catalogue": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Sales Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings for Retrieval": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Product Catalogue (Retrieve)",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Per-Customer Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Sales Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Product Brochure": {
+      "main": [
+        [
+          {
+            "node": "Extract Brochure Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Describe Video with Gemini": {
+      "main": [
+        [
+          {
+            "node": "Prepare Agent Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Populate Product Catalogue": {
+      "main": [
+        [
+          {
+            "node": "Knowledge Base Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product Catalogue (Retrieve)": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "query_product_catalogue",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Image with GPT Vision": {
+      "main": [
+        [
+          {
+            "node": "Prepare Agent Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b61daef9-e335-4fc5-a68d-36e1ae94a863",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "32b8323528711e73dc2ab1cf6f7d984cdfadbe0c9e3ede3ee4be3b9aeccbfbb2"
+  },
+  "nodeGroups": [],
+  "id": "awZwRCXE2FJ0zIJT",
+  "tags": []
+}
